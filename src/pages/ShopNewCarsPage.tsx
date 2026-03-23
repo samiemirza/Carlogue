@@ -12,14 +12,14 @@ export function ShopNewCarsPage() {
       <section className="section" id="popular-cars">
         <PageContainer>
           <SectionHeader title="Popular Cars" />
-          <ArticleGrid articles={popularCars} />
+          <ArticleGrid articles={popularCars} className="car-card-grid" cardMode="car" />
         </PageContainer>
       </section>
 
       <section className="section section-tight-top">
         <PageContainer>
           <SectionHeader title="Future Cars" description="Placeholder cards for upcoming launches." />
-          <ArticleGrid articles={futureCars} />
+          <ArticleGrid articles={futureCars} className="car-card-grid" cardMode="car" />
         </PageContainer>
       </section>
     </>

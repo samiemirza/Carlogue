@@ -9,6 +9,7 @@ export function FooterBand() {
       <PageContainer>
         <div className="footer-main-grid">
           <div className="footer-brand-block">
+            <img src="/images/alt_logo.svg" alt="Carlogue logo" className="footer-logo-image" loading="lazy" />
             <p className="footer-note">
               Independent automotive news, reviews, comparison tests, and buyer guidance for the Pakistan market.
             </p>

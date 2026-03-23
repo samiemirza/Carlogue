@@ -1,4 +1,4 @@
-import { NavLink } from "react-router-dom";
+import { Link, NavLink } from "react-router-dom";
 import { navItems } from "../../data/siteData";
 import { PageContainer } from "./PageContainer";
 
@@ -7,7 +7,11 @@ export function MainNav() {
     <header className="main-nav-shell">
       <PageContainer>
         <div className="main-nav-row">
-          <div className="main-nav-logo-space" aria-hidden="true" />
+          <div className="main-nav-logo-space">
+            <Link to="/" className="main-nav-logo-link" aria-label="Carlogue home">
+              <img src="/images/og_logo.png" alt="Carlogue logo" className="main-nav-logo-image" />
+            </Link>
+          </div>
 
           <nav className="main-nav" aria-label="Primary">
             <NavLink to="/" className={({ isActive }) => `main-nav-link ${isActive ? "is-active" : ""}`.trim()}>

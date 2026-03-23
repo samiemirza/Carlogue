@@ -1,4 +1,4 @@
-# Cars R Us - Homepage Reference Spec
+# Carlogue - Homepage Reference Spec
 
 This spec is built from the uploaded PDF mockup and is meant to be the **source of truth** for the homepage and the shared design language for all other pages.
 
@@ -25,8 +25,8 @@ These are the closest usable tokens from the PDF:
 --color-text: #111111;
 --color-text-soft: #5F6368;
 --color-border: #D9D9D9;
---color-teal: #3095B4;      /* research band + active accents */
---color-footer: #025172;    /* top strip + footer band */
+--color-sand: #D6C3A1;      /* research band + active accents */
+--color-footer: #172243;    /* top strip + footer band */
 --color-news: #0A9A4B;      /* small NEWS label */
 ```
 

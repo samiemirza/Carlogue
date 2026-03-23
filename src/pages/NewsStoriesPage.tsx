@@ -1,6 +1,7 @@
-import { HeroWithGrid } from "../components/common/HeroWithGrid";
+import { FeatureSplit } from "../components/common/FeatureSplit";
 import { SectionHeader } from "../components/common/SectionHeader";
 import { PageContainer } from "../components/layout/PageContainer";
+import { Link } from "react-router-dom";
 import {
   columnsArticles,
   columnsHero,
@@ -9,43 +10,33 @@ import {
   newsStoriesHero,
   newsStoriesTopColumns,
 } from "../data/siteData";
-import type { Article } from "../types";
-
-function withoutCategory(article: Article): Article {
-  return {
-    ...article,
-    category: undefined,
-  };
-}
 
 export function NewsStoriesPage() {
-  const cleanNewsStoriesHero = withoutCategory(newsStoriesHero);
-  const cleanNewsStoriesTopColumns = newsStoriesTopColumns.map(withoutCategory);
-  const cleanColumnsHero = withoutCategory(columnsHero);
-  const cleanColumnsArticles = columnsArticles.map(withoutCategory);
-  const cleanInternationalHero = withoutCategory(internationalHero);
-  const cleanInternationalArticles = internationalArticles.map(withoutCategory);
-
   return (
     <>
       <section className="section">
         <PageContainer>
           <SectionHeader title="Top Story" />
-          <HeroWithGrid hero={cleanNewsStoriesHero} cards={cleanNewsStoriesTopColumns} />
+          <FeatureSplit feature={newsStoriesHero} sidebar={newsStoriesTopColumns} />
         </PageContainer>
       </section>
 
       <section className="section section-tight-top news-columns-section">
         <PageContainer>
           <SectionHeader title="Columns" />
-          <HeroWithGrid hero={cleanColumnsHero} cards={cleanColumnsArticles} />
+          <FeatureSplit feature={columnsHero} sidebar={columnsArticles} />
         </PageContainer>
       </section>
 
       <section className="section section-tight-top">
         <PageContainer>
           <SectionHeader title="International News" />
-          <HeroWithGrid hero={cleanInternationalHero} cards={cleanInternationalArticles} />
+          <FeatureSplit feature={internationalHero} sidebar={internationalArticles} />
+          <div className="section-action">
+            <Link to="/news-stories/stories" className="outline-button">
+              VIEW ALL
+            </Link>
+          </div>
         </PageContainer>
       </section>
     </>

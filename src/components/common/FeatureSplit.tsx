@@ -5,12 +5,16 @@ import { SidebarStoryList } from "../cards/SidebarStoryList";
 type FeatureSplitProps = {
   feature: Article;
   sidebar: Article[];
+  className?: string;
+  reverse?: boolean;
 };
 
-export function FeatureSplit({ feature, sidebar }: FeatureSplitProps) {
+export function FeatureSplit({ feature, sidebar, className, reverse = false }: FeatureSplitProps) {
+  const classes = ["feature-split", reverse ? "is-reverse" : "", className ?? ""].filter(Boolean).join(" ");
+
   return (
-    <div className="feature-split">
-      <FeatureStory article={feature} largeTitle />
+    <div className={classes}>
+      <FeatureStory article={feature} largeTitle showExcerpt={false} />
       <SidebarStoryList stories={sidebar} />
     </div>
   );

@@ -4,10 +4,12 @@ import { FooterBand } from "./components/layout/FooterBand";
 import { MainNav } from "./components/layout/MainNav";
 import { TopStrip } from "./components/layout/TopStrip";
 import { CarWorthPage } from "./pages/CarWorthPage";
+import { CarDetailsPage } from "./pages/CarDetailsPage";
 import { ExpertReviewsPage } from "./pages/ExpertReviewsPage";
 import { HomePage } from "./pages/HomePage";
 import { NewsStoriesPage } from "./pages/NewsStoriesPage";
 import { ShopNewCarsPage } from "./pages/ShopNewCarsPage";
+import { StoriesPage } from "./pages/StoriesPage";
 
 function ScrollToTopOnRouteChange() {
   const location = useLocation();
@@ -82,6 +84,8 @@ export default function App() {
             <Route path="/shop-new-cars" element={<ShopNewCarsPage />} />
             <Route path="/expert-reviews" element={<ExpertReviewsPage />} />
             <Route path="/news-stories" element={<NewsStoriesPage />} />
+            <Route path="/news-stories/stories" element={<StoriesPage />} />
+            <Route path="/cars/:carId" element={<CarDetailsPage />} />
             <Route path="/whats-my-car-worth" element={<CarWorthPage />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>

@@ -1,4 +1,4 @@
-# Cars R Us Frontend Template
+# Carlogue Frontend Template
 
 Static React + TypeScript frontend implementing the multi-page editorial template from your PDF/spec.
 

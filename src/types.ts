@@ -7,6 +7,10 @@ export type Article = {
   id: string;
   title: string;
   category?: string;
+  publishedAt?: string;
+  rating?: number;
+  startingPriceLacs?: number;
+  gallery?: string[];
   excerpt?: string;
   image?: string;
   href?: string;

@@ -55,6 +55,7 @@ export const latestReviews: Article[] = [
 
 export const featuredMain: Article = {
   id: "featured-main",
+  category: "News",
   title: "Future Cars Worth Waiting For: 2026-2030",
   excerpt: "A forward look at upcoming cars, trucks, and SUVs expected across the next model years.",
   image: "/images/home/featured-collage.jpg",
@@ -68,16 +69,16 @@ export const featuredSidebar: Article[] = [
 ];
 
 export const popularCars: Article[] = [
-  { id: "pc-1", title: "2026 Honda Prelude", image: "/images/home/popular-01.jpg" },
-  { id: "pc-2", title: "2027 Kia Telluride", image: "/images/home/popular-02.jpg" },
-  { id: "pc-3", title: "2027 BMW iX3", image: "/images/home/popular-03.jpg" },
-  { id: "pc-4", title: "2027 Ram 1500 SRT TRX", image: "/images/home/popular-04.jpg" },
+  { id: "pc-1", title: "2026 Honda Prelude", image: "/images/home/popular-01.jpg", rating: 4.6, startingPriceLacs: 122 },
+  { id: "pc-2", title: "2027 Kia Telluride", image: "/images/home/popular-02.jpg", rating: 4.7, startingPriceLacs: 168 },
+  { id: "pc-3", title: "2027 BMW iX3", image: "/images/home/popular-03.jpg", rating: 4.5, startingPriceLacs: 295 },
+  { id: "pc-4", title: "2027 Ram 1500 SRT TRX", image: "/images/home/popular-04.jpg", rating: 4.4, startingPriceLacs: 358 },
 ];
 
 export const buyersGuideHero: Article = {
   id: "buyers-hero",
   title: "2026 Editors' Choice: The Best New Vehicles On Sale",
-  image: "/images/home/buyers-guide-hero.jpg",
+  image: "/images/editors-choice.png",
   excerpt: "Our annual shortlist of the best vehicles across key price points.",
 };
 
@@ -89,10 +90,10 @@ export const buyersGuideArticles: Article[] = [
 ];
 
 export const futureCars: Article[] = [
-  { id: "fc-1", title: "2027 Compact Performance Sedan", image: "/images/shop/future-01.jpg" },
-  { id: "fc-2", title: "2028 Family EV Crossover", image: "/images/shop/future-02.jpg" },
-  { id: "fc-3", title: "2027 Hybrid Pickup Concept", image: "/images/shop/future-03.jpg" },
-  { id: "fc-4", title: "2028 Long-Range City Hatch", image: "/images/shop/future-04.jpg" },
+  { id: "fc-1", title: "2027 Compact Performance Sedan", image: "/images/shop/future-01.jpg", rating: 4.3, startingPriceLacs: 98 },
+  { id: "fc-2", title: "2028 Family EV Crossover", image: "/images/shop/future-02.jpg", rating: 4.5, startingPriceLacs: 142 },
+  { id: "fc-3", title: "2027 Hybrid Pickup Concept", image: "/images/shop/future-03.jpg", rating: 4.2, startingPriceLacs: 176 },
+  { id: "fc-4", title: "2028 Long-Range City Hatch", image: "/images/shop/future-04.jpg", rating: 4.4, startingPriceLacs: 88 },
 ];
 
 export const firstDrivesTop: Article[] = [
@@ -134,40 +135,43 @@ export const newsStoriesHero: Article = {
   id: "ns-hero",
   title: "Pakistan Auto Market Outlook: What to Expect Next Quarter",
   category: "News",
+  publishedAt: "2026-03-23",
   excerpt: "Production, pricing, and policy trends shaping short-term decisions.",
 };
 
 export const newsStoriesTopColumns: Article[] = [
-  { id: "nst-1", title: "New assembly updates from major brands", category: "News" },
-  { id: "nst-2", title: "Policy watch: import and tax shifts", category: "News" },
-  { id: "nst-3", title: "Dealer perspective: booking timelines", category: "News" },
-  { id: "nst-4", title: "Supply chain snapshot for key segments", category: "News" },
+  { id: "nst-1", title: "New assembly updates from major brands", category: "News", publishedAt: "2026-03-22" },
+  { id: "nst-2", title: "Policy watch: import and tax shifts", category: "News", publishedAt: "2026-03-21" },
+  { id: "nst-3", title: "Dealer perspective: booking timelines", category: "News", publishedAt: "2026-03-20" },
+  { id: "nst-4", title: "Supply chain snapshot for key segments", category: "News", publishedAt: "2026-03-19" },
 ];
 
 export const columnsHero: Article = {
   id: "col-hero",
   title: "Columns: Why smart specs matter more than badges in 2026",
   category: "Columns",
+  publishedAt: "2026-03-18",
   excerpt: "An opinionated take on how buyers should compare value.",
 };
 
 export const columnsArticles: Article[] = [
-  { id: "col-1", title: "Column: The case for sensible tire sizes", category: "Columns" },
-  { id: "col-2", title: "Column: Why service network still wins", category: "Columns" },
-  { id: "col-3", title: "Column: Resale myths to stop repeating", category: "Columns" },
-  { id: "col-4", title: "Column: Features that matter in traffic", category: "Columns" },
+  { id: "col-1", title: "Column: The case for sensible tire sizes", category: "Columns", publishedAt: "2026-03-17" },
+  { id: "col-2", title: "Column: Why service network still wins", category: "Columns", publishedAt: "2026-03-16" },
+  { id: "col-3", title: "Column: Resale myths to stop repeating", category: "Columns", publishedAt: "2026-03-15" },
+  { id: "col-4", title: "Column: Features that matter in traffic", category: "Columns", publishedAt: "2026-03-14" },
 ];
 
 export const internationalHero: Article = {
   id: "int-hero",
   title: "International: New EV platform launches with 800V architecture",
   category: "International",
+  publishedAt: "2026-03-13",
   excerpt: "Global platform updates and what they could mean for local variants.",
 };
 
 export const internationalArticles: Article[] = [
-  { id: "int-1", title: "Global recalls and software fixes this week", category: "International" },
-  { id: "int-2", title: "New safety standards in key export markets", category: "International" },
-  { id: "int-3", title: "Battery cost trendline and range impact", category: "International" },
-  { id: "int-4", title: "How global launches affect local pricing", category: "International" },
+  { id: "int-1", title: "Global recalls and software fixes this week", category: "International", publishedAt: "2026-03-12" },
+  { id: "int-2", title: "New safety standards in key export markets", category: "International", publishedAt: "2026-03-11" },
+  { id: "int-3", title: "Battery cost trendline and range impact", category: "International", publishedAt: "2026-03-10" },
+  { id: "int-4", title: "How global launches affect local pricing", category: "International", publishedAt: "2026-03-09" },
 ];
