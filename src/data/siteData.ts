@@ -69,10 +69,10 @@ export const featuredSidebar: Article[] = [
 ];
 
 export const popularCars: Article[] = [
-  { id: "pc-1", title: "2026 Honda Prelude", image: "/images/home/popular-01.jpg", rating: 4.6, startingPriceLacs: 122 },
-  { id: "pc-2", title: "2027 Kia Telluride", image: "/images/home/popular-02.jpg", rating: 4.7, startingPriceLacs: 168 },
-  { id: "pc-3", title: "2027 BMW iX3", image: "/images/home/popular-03.jpg", rating: 4.5, startingPriceLacs: 295 },
-  { id: "pc-4", title: "2027 Ram 1500 SRT TRX", image: "/images/home/popular-04.jpg", rating: 4.4, startingPriceLacs: 358 },
+  { id: "pc-1", title: "2026 Honda Prelude", category: "Performance", image: "/images/home/popular-01.jpg", rating: 4.6, startingPriceLacs: 122 },
+  { id: "pc-2", title: "2027 Kia Telluride", category: "SUVs", image: "/images/home/popular-02.jpg", rating: 4.7, startingPriceLacs: 168 },
+  { id: "pc-3", title: "2027 BMW iX3", category: "EVs", image: "/images/home/popular-03.jpg", rating: 4.5, startingPriceLacs: 295 },
+  { id: "pc-4", title: "2027 Ram 1500 SRT TRX", category: "Pickup", image: "/images/home/popular-04.jpg", rating: 4.4, startingPriceLacs: 358 },
 ];
 
 export const buyersGuideHero: Article = {
@@ -90,10 +90,10 @@ export const buyersGuideArticles: Article[] = [
 ];
 
 export const futureCars: Article[] = [
-  { id: "fc-1", title: "2027 Compact Performance Sedan", image: "/images/shop/future-01.jpg", rating: 4.3, startingPriceLacs: 98 },
-  { id: "fc-2", title: "2028 Family EV Crossover", image: "/images/shop/future-02.jpg", rating: 4.5, startingPriceLacs: 142 },
-  { id: "fc-3", title: "2027 Hybrid Pickup Concept", image: "/images/shop/future-03.jpg", rating: 4.2, startingPriceLacs: 176 },
-  { id: "fc-4", title: "2028 Long-Range City Hatch", image: "/images/shop/future-04.jpg", rating: 4.4, startingPriceLacs: 88 },
+  { id: "fc-1", title: "2027 Compact Performance Sedan", category: "Performance", image: "/images/shop/future-01.jpg", rating: 4.3, startingPriceLacs: 98 },
+  { id: "fc-2", title: "2028 Family EV Crossover", category: "EVs", image: "/images/shop/future-02.jpg", rating: 4.5, startingPriceLacs: 142 },
+  { id: "fc-3", title: "2027 Hybrid Pickup Concept", category: "Pickup", image: "/images/shop/future-03.jpg", rating: 4.2, startingPriceLacs: 176 },
+  { id: "fc-4", title: "2028 Long-Range City Hatch", category: "Hatchbacks", image: "/images/shop/future-04.jpg", rating: 4.4, startingPriceLacs: 88 },
 ];
 
 export const firstDrivesTop: Article[] = [

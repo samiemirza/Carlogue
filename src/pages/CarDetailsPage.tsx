@@ -26,6 +26,8 @@ const carSectionTabs: CarSectionTab[] = [
   { id: "specifications", label: "Specifications" },
   { id: "similar-vehicles", label: "Similar Vehicles" },
 ];
+const DEFAULT_EDITOR_TRIM_NAME = "Premium Luxury";
+const PENDING_SCROLL_LOCK_MS = 1800;
 
 function findCarById(carId?: string): Article | undefined {
   if (!carId) {
@@ -43,9 +45,10 @@ function formatRatingOutOfTen(rating?: number): string {
   return `${text}/10`;
 }
 
-function formatPriceInLacs(startingPriceLacs?: number): string {
-  const safePrice = typeof startingPriceLacs === "number" && Number.isFinite(startingPriceLacs) ? Math.max(0, startingPriceLacs) : 100;
-  return `PKR ${safePrice.toLocaleString("en-PK")} lacs`;
+function formatLacsAmount(priceLacs: number): string {
+  const safePrice = Number.isFinite(priceLacs) ? Math.max(0, priceLacs) : 0;
+  const minimumFractionDigits = Number.isInteger(safePrice) ? 0 : 1;
+  return safePrice.toLocaleString("en-PK", { minimumFractionDigits, maximumFractionDigits: 2 });
 }
 
 function extractBrand(title: string): string {
@@ -59,6 +62,50 @@ function extractBrand(title: string): string {
   }
 
   return tokens[0];
+}
+
+function normalizeLookupValue(value: string): string {
+  return value.trim().toLowerCase().replace(/[\s_-]+/g, " ");
+}
+
+function getCarBrand(article: Article): string {
+  const explicitBrand = (article as Article & { brand?: string }).brand;
+  if (explicitBrand && explicitBrand.trim().length) {
+    return explicitBrand.trim();
+  }
+
+  return extractBrand(article.title);
+}
+
+function getCarCategory(article: Article): string {
+  if (article.category && article.category.trim().length) {
+    return article.category.trim();
+  }
+
+  const title = article.title.toLowerCase();
+  if (title.includes("pickup") || title.includes("trx")) {
+    return "Pickup";
+  }
+  if (title.includes("suv")) {
+    return "SUVs";
+  }
+  if (title.includes("crossover")) {
+    return "Crossovers";
+  }
+  if (title.includes("hatch")) {
+    return "Hatchbacks";
+  }
+  if (title.includes("sedan")) {
+    return "Sedans";
+  }
+  if (title.includes("ev") || title.includes("electric")) {
+    return "EVs";
+  }
+  if (title.includes("performance")) {
+    return "Performance";
+  }
+
+  return "";
 }
 
 function buildCarGallery(car: Article): string[] {
@@ -75,6 +122,15 @@ function buildCarGallery(car: Article): string[] {
   return uniqueGallery;
 }
 
+function getMainNavHeight(): number {
+  const nav = document.querySelector(".main-nav-shell");
+  if (!nav) {
+    return 0;
+  }
+
+  return Math.ceil(nav.getBoundingClientRect().height);
+}
+
 export function CarDetailsPage() {
   const { carId } = useParams();
   const car = findCarById(carId);
@@ -85,9 +141,26 @@ export function CarDetailsPage() {
   const [isTabsStuck, setIsTabsStuck] = useState(false);
   const [canScrollTabsLeft, setCanScrollTabsLeft] = useState(false);
   const [canScrollTabsRight, setCanScrollTabsRight] = useState(false);
-  const [selectedTrimName, setSelectedTrimName] = useState("Luxury");
+  const [selectedSpecTrimName, setSelectedSpecTrimName] = useState(DEFAULT_EDITOR_TRIM_NAME);
+  const [isSpecVariantMenuOpen, setIsSpecVariantMenuOpen] = useState(false);
   const tabsNavRef = useRef<HTMLDivElement | null>(null);
   const tabsRowRef = useRef<HTMLDivElement | null>(null);
+  const specVariantMenuRef = useRef<HTMLDivElement | null>(null);
+  const pendingScrollSectionIdRef = useRef<string | null>(null);
+  const pendingScrollStartedAtRef = useRef<number | null>(null);
+
+  function getSectionActivationAnchor(sectionId: string): HTMLElement | null {
+    const section = document.getElementById(sectionId);
+    if (!section) {
+      return null;
+    }
+
+    if (sectionId === "at-a-glance") {
+      return section;
+    }
+
+    return section.querySelector<HTMLElement>(".car-template-section-title") ?? section;
+  }
 
   if (!car) {
     return (
@@ -111,7 +184,9 @@ export function CarDetailsPage() {
 
   const basePrice = typeof car.startingPriceLacs === "number" && Number.isFinite(car.startingPriceLacs) ? Math.max(0, car.startingPriceLacs) : 100;
   const highPrice = basePrice + 34;
-  const brand = extractBrand(car.title);
+  const brand = getCarBrand(car);
+  const normalizedBrand = normalizeLookupValue(brand);
+  const normalizedCategory = normalizeLookupValue(getCarCategory(car));
   const gallery = useMemo(() => buildCarGallery(car), [car]);
   const activeImage = gallery[activeGalleryIndex] ?? gallery[0] ?? car.image;
   const exteriorImageTwo = gallery[1] ?? gallery[0] ?? car.image;
@@ -123,15 +198,43 @@ export function CarDetailsPage() {
   }, [car.id]);
 
   useEffect(() => {
-    function getMainNavHeight(): number {
-      const nav = document.querySelector(".main-nav-shell");
-      if (!nav) {
-        return 0;
-      }
+    setIsSpecVariantMenuOpen(false);
+  }, [car.id]);
 
-      return Math.ceil(nav.getBoundingClientRect().height);
+  useEffect(() => {
+    if (!isSpecVariantMenuOpen) {
+      return;
     }
 
+    function handlePointerDown(event: MouseEvent | TouchEvent) {
+      if (!(event.target instanceof Node)) {
+        return;
+      }
+
+      const menuElement = specVariantMenuRef.current;
+      if (menuElement && !menuElement.contains(event.target)) {
+        setIsSpecVariantMenuOpen(false);
+      }
+    }
+
+    function handleEscapeKey(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        setIsSpecVariantMenuOpen(false);
+      }
+    }
+
+    window.addEventListener("mousedown", handlePointerDown);
+    window.addEventListener("touchstart", handlePointerDown, { passive: true });
+    window.addEventListener("keydown", handleEscapeKey);
+
+    return () => {
+      window.removeEventListener("mousedown", handlePointerDown);
+      window.removeEventListener("touchstart", handlePointerDown);
+      window.removeEventListener("keydown", handleEscapeKey);
+    };
+  }, [isSpecVariantMenuOpen]);
+
+  useEffect(() => {
     function updateMainNavHeight() {
       setNavStickyOffset(getMainNavHeight());
     }
@@ -161,30 +264,51 @@ export function CarDetailsPage() {
     }
 
     function updateActiveSectionAndStickyState() {
-      const tabsElement = tabsRowRef.current;
       const tabsNavElement = tabsNavRef.current;
-      if (!tabsElement || !tabsNavElement) {
+      if (!tabsNavElement) {
         return;
       }
 
-      const tabsHeight = tabsElement.offsetHeight;
       const tabsTop = tabsNavElement.getBoundingClientRect().top;
       const stickyNow = tabsTop <= navStickyOffset + 1 && window.scrollY > 0;
       setIsTabsStuck(stickyNow);
 
-      const scanLine = window.scrollY + navStickyOffset + tabsHeight + 22;
+      const activationLine = Math.ceil(tabsNavElement.getBoundingClientRect().bottom) + 2;
+      const pendingSectionId = pendingScrollSectionIdRef.current;
+      if (pendingSectionId) {
+        const pendingAnchor = getSectionActivationAnchor(pendingSectionId);
+        const pendingAge = pendingScrollStartedAtRef.current ? Date.now() - pendingScrollStartedAtRef.current : 0;
+        if (pendingAnchor) {
+          const pendingDistance = Math.abs(pendingAnchor.getBoundingClientRect().top - activationLine);
+          if (pendingDistance > 10 && pendingAge < PENDING_SCROLL_LOCK_MS) {
+            setActiveSectionId(pendingSectionId);
+            return;
+          }
+        }
+        pendingScrollSectionIdRef.current = null;
+        pendingScrollStartedAtRef.current = null;
+      }
+
       let currentId = tabs[0].id;
 
       for (const tab of tabs) {
-        const target = document.getElementById(tab.id);
-        if (!target) {
+        const anchor = getSectionActivationAnchor(tab.id);
+        if (!anchor) {
           continue;
         }
 
-        const targetTop = target.getBoundingClientRect().top + window.scrollY;
-        if (scanLine >= targetTop) {
+        const top = anchor.getBoundingClientRect().top;
+        if (top <= activationLine) {
           currentId = tab.id;
+          continue;
         }
+
+        break;
+      }
+
+      const nearBottom = window.scrollY + window.innerHeight >= document.documentElement.scrollHeight - 2;
+      if (nearBottom && tabs.length) {
+        currentId = tabs[tabs.length - 1].id;
       }
 
       setActiveSectionId(currentId);
@@ -254,14 +378,23 @@ export function CarDetailsPage() {
   }, [car.id]);
 
   function scrollToSection(sectionId: string) {
-    const target = document.getElementById(sectionId);
-    if (!target) {
+    const anchor = getSectionActivationAnchor(sectionId);
+    if (!anchor) {
       return;
     }
 
-    const tabsHeight = tabsNavRef.current?.offsetHeight ?? 0;
-    const targetY = target.getBoundingClientRect().top + window.scrollY - navStickyOffset - tabsHeight - 12;
-    window.scrollTo({ top: Math.max(0, targetY), behavior: "smooth" });
+    const currentMainNavHeight = getMainNavHeight();
+    if (currentMainNavHeight !== navStickyOffset) {
+      setNavStickyOffset(currentMainNavHeight);
+    }
+
+    const tabsNavElement = tabsNavRef.current;
+    const stickyHeadingOffset = currentMainNavHeight + (tabsNavElement?.offsetHeight ?? 0) + 8;
+    anchor.style.scrollMarginTop = `${stickyHeadingOffset}px`;
+    pendingScrollSectionIdRef.current = sectionId;
+    pendingScrollStartedAtRef.current = Date.now();
+    setActiveSectionId(sectionId);
+    anchor.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
   function scrollTabs(direction: "left" | "right") {
@@ -290,9 +423,14 @@ export function CarDetailsPage() {
 
     setActiveGalleryIndex((current) => (current + 1) % gallery.length);
   }
-  const brandAlternatives = allCars.filter((candidate) => candidate.id !== car.id && extractBrand(candidate.title) === brand);
-  const similarVehicles = allCars.filter((candidate) => candidate.id !== car.id).slice(0, 3);
-  const moreFromBrand = (brandAlternatives.length ? brandAlternatives : allCars.filter((candidate) => candidate.id !== car.id)).slice(0, 3);
+  const similarVehicles = allCars
+    .filter((candidate) => candidate.id !== car.id)
+    .filter((candidate) => normalizeLookupValue(getCarCategory(candidate)) === normalizedCategory)
+    .slice(0, 3);
+  const moreFromBrand = allCars
+    .filter((candidate) => candidate.id !== car.id)
+    .filter((candidate) => normalizeLookupValue(getCarBrand(candidate)) === normalizedBrand)
+    .slice(0, 3);
   const rankedVehiclesWithPosition = [...allCars]
     .sort((left, right) => (right.rating ?? 0) - (left.rating ?? 0))
     .map((vehicle, index) => ({ vehicle, rank: index + 1 }));
@@ -322,14 +460,136 @@ export function CarDetailsPage() {
       highlights: ["Adaptive dampers and sport-tuned suspension", "Larger front brakes with performance pads", "360-degree camera and advanced parking assist"],
     },
   ];
-
-  const specRows = [
-    { label: "Vehicle Type", value: "Front-engine, rear-wheel-drive, 5-passenger, 4-door sedan" },
-    { label: "Engine", value: "Turbocharged and intercooled inline-4, direct fuel injection" },
-    { label: "Transmission", value: "8-speed automatic" },
-    { label: "Drivetrain", value: "RWD (AWD on selected trims)" },
-    { label: "Fuel Economy", value: "Estimated 13-18 km/l (variant dependent)" },
-    { label: "Warranty", value: "4 years / 50,000 miles (template placeholder)" },
+  const editorSelectedTrimName = trimRows.find((trim) => trim.name === DEFAULT_EDITOR_TRIM_NAME)?.name ?? trimRows[0]?.name ?? "";
+  const usePricingCarousel = trimRows.length > 3;
+  const fallbackTrim = trimRows[0] ?? { name: DEFAULT_EDITOR_TRIM_NAME, price: basePrice, highlights: [] as string[] };
+  const selectedSpecTrim = trimRows.find((trim) => trim.name === selectedSpecTrimName) ?? fallbackTrim;
+  const trimSpecProfiles: Record<
+    string,
+    {
+      enginePower: string;
+      engineTorque: string;
+      transmission: string;
+      curbWeight: string;
+      acceleration: string;
+      quarterMile: string;
+      topSpeed: string;
+      fuelEconomy: string;
+      wheelAndTire: string;
+      brakes: string;
+      suspension: string;
+    }
+  > = {
+    Luxury: {
+      enginePower: "188 hp @ 5,800 rpm",
+      engineTorque: "300 Nm @ 1,800 rpm",
+      transmission: "8-speed automatic",
+      curbWeight: "1,540 kg",
+      acceleration: "0-100 km/h: 8.0 sec",
+      quarterMile: "1/4-mile: 16.1 sec",
+      topSpeed: "Top Speed: 230 km/h",
+      fuelEconomy: "13.8 / 11.7 / 16.2 km/l",
+      wheelAndTire: "17-in alloy wheels, 225/45 R17 tires",
+      brakes: "Ventilated front discs / solid rear discs",
+      suspension: "Front strut / rear multi-link",
+    },
+    "Premium Luxury": {
+      enginePower: "194 hp @ 5,800 rpm",
+      engineTorque: "320 Nm @ 1,700 rpm",
+      transmission: "8-speed automatic with adaptive shift mapping",
+      curbWeight: "1,575 kg",
+      acceleration: "0-100 km/h: 7.6 sec",
+      quarterMile: "1/4-mile: 15.8 sec",
+      topSpeed: "Top Speed: 238 km/h",
+      fuelEconomy: "13.3 / 11.2 / 15.6 km/l",
+      wheelAndTire: "18-in alloy wheels, 235/40 R18 tires",
+      brakes: "Ventilated front discs / ventilated rear discs",
+      suspension: "Comfort-tuned adaptive damping",
+    },
+    Sport: {
+      enginePower: "205 hp @ 6,000 rpm",
+      engineTorque: "340 Nm @ 1,600 rpm",
+      transmission: "8-speed automatic with paddle shifters",
+      curbWeight: "1,610 kg",
+      acceleration: "0-100 km/h: 6.9 sec",
+      quarterMile: "1/4-mile: 15.2 sec",
+      topSpeed: "Top Speed: 248 km/h",
+      fuelEconomy: "12.7 / 10.5 / 15.0 km/l",
+      wheelAndTire: "19-in performance wheels, 235/35 R19 tires",
+      brakes: "Large ventilated front / rear discs with sport pads",
+      suspension: "Sport adaptive suspension with firmer calibration",
+    },
+  };
+  const selectedTrimProfile = trimSpecProfiles[selectedSpecTrim.name] ?? trimSpecProfiles[DEFAULT_EDITOR_TRIM_NAME];
+  const specSheetLeftSections = [
+    {
+      title: "Vehicle",
+      lines: [
+        "Vehicle Type: front-engine, 5-passenger, 4-door sedan",
+        "Layout: longitudinal engine with rear-wheel drive bias",
+        "Drivetrain: RWD (AWD available on selected trims)",
+      ],
+    },
+    {
+      title: "Price",
+      lines: trimRows.map((trim) => `${trim.name}: PKR ${formatLacsAmount(trim.price)} lacs`),
+    },
+    {
+      title: "Engine",
+      lines: [
+        "Type: turbocharged and intercooled inline-4, direct injection",
+        "Displacement: 2.0 L (1,998 cc)",
+        `Power: ${selectedTrimProfile.enginePower}`,
+        `Torque: ${selectedTrimProfile.engineTorque}`,
+      ],
+    },
+    {
+      title: "Transmission",
+      lines: [
+        `Gearbox: ${selectedTrimProfile.transmission}`,
+        "Drive Modes: Eco, Comfort, Sport",
+        "Traction Management: Electronic stability + launch traction control",
+      ],
+    },
+    {
+      title: "Performance (Est)",
+      lines: [selectedTrimProfile.acceleration, selectedTrimProfile.quarterMile, selectedTrimProfile.topSpeed],
+    },
+  ];
+  const specSheetRightSections = [
+    {
+      title: "Dimensions",
+      lines: [
+        "Wheelbase: 107.7 in",
+        "Length: 185.8 in",
+        "Width: 72.0 in",
+        "Height: 56.1 in",
+        "Passenger Volume: 94 cu ft",
+        "Cargo Volume: 24 cu ft",
+        `Curb Weight (est): ${selectedTrimProfile.curbWeight}`,
+      ],
+    },
+    {
+      title: "Fuel Economy (Est)",
+      lines: [
+        `Combined / City / Highway: ${selectedTrimProfile.fuelEconomy}`,
+        "Fuel Tank: 47 L (12.4 gal)",
+        "Recommended Fuel: Premium unleaded",
+      ],
+    },
+    {
+      title: "Chassis, Brakes & Tires",
+      lines: [`Brakes: ${selectedTrimProfile.brakes}`, `Suspension: ${selectedTrimProfile.suspension}`, `Wheels/Tires: ${selectedTrimProfile.wheelAndTire}`],
+    },
+    {
+      title: "Warranty & Service",
+      lines: [
+        "Basic Warranty: 4 years / 50,000 miles",
+        "Powertrain Warranty: 6 years / 70,000 miles",
+        "Roadside Assistance: 4 years / 50,000 miles",
+        "Service Interval: every 10,000 km or 12 months",
+      ],
+    },
   ];
 
   return (
@@ -440,7 +700,9 @@ export function CarDetailsPage() {
             <h2 className="car-template-section-title">Overview</h2>
             <p className="car-template-text centered">
               {car.title} is presented here as a full front-end template section, ready for backend-driven content. This block is structured to mirror
-              editorial-style vehicle pages while retaining your Carlogue typography and color system.
+              editorial-style vehicle pages while retaining your Carlogue typography and color system. When real content is connected, this area can host
+              a short buying summary, market position notes, and links to deeper analysis for readers comparing multiple vehicles in the same segment.
+              For now, the longer copy helps verify spacing, wrapping behavior, and section transition readability across screen sizes.
             </p>
           </section>
 
@@ -462,31 +724,21 @@ export function CarDetailsPage() {
 
           <section className="car-template-block" id="pricing">
             <h2 className="car-template-section-title">Pricing and Which One to Buy</h2>
-            <div className="car-template-pricing-cards" role="list">
+            <div className={`car-template-pricing-cards ${usePricingCarousel ? "is-carousel" : ""}`.trim()} role="list">
               {trimRows.map((trim, index) => {
                 const previousTrim = trimRows[index - 1];
                 const inheritedText = index > 0 ? `Everything in ${previousTrim.name} and:` : null;
                 const bulletPoints = trim.highlights.slice(0, 3);
-                const isSelected = selectedTrimName === trim.name;
+                const isSelected = editorSelectedTrimName === trim.name;
+                const formattedPriceLacs = formatLacsAmount(trim.price);
 
                 return (
                   <article
                     key={trim.name}
                     className={`car-template-pricing-card ${isSelected ? "is-selected" : ""}`.trim()}
-                    role="button"
-                    tabIndex={0}
-                    onClick={() => setSelectedTrimName(trim.name)}
-                    onKeyDown={(event) => {
-                      if (event.key === "Enter" || event.key === " ") {
-                        event.preventDefault();
-                        setSelectedTrimName(trim.name);
-                      }
-                    }}
-                    aria-pressed={isSelected}
                   >
                     <header className="car-template-pricing-head">
-                      <h3>{trim.name}</h3>
-                      <p>{`PKR ${trim.price.toLocaleString("en-PK")} lacs`}</p>
+                      <h3 className="car-template-pricing-title">{trim.name}</h3>
                     </header>
                     <p className={`car-template-pricing-inherits ${inheritedText ? "" : "is-empty"}`.trim()}>{inheritedText ?? "Everything in"}</p>
                     <ul>
@@ -494,42 +746,43 @@ export function CarDetailsPage() {
                         <li key={`${trim.name}-${point}`}>{point}</li>
                       ))}
                     </ul>
+                    <p className="car-template-pricing-price" aria-label={`Price PKR ${formattedPriceLacs} lacs`}>
+                      <span className="car-template-pricing-currency">PKR</span>
+                      <span className="car-template-pricing-amount">{formattedPriceLacs}</span>
+                      <span className="car-template-pricing-unit">lacs</span>
+                    </p>
                   </article>
                 );
               })}
             </div>
             <p className="car-template-text centered">
-              This template section is prepared for backend-driven variant data, pricing updates, and recommendation logic.
+              This template section is prepared for backend-driven variant data, pricing updates, and recommendation logic. It is designed so editorial
+              teams can flag a preferred trim while product teams surface live prices, incentive updates, and in-stock availability by city. The extended
+              placeholder text here is intentional so you can validate layout rhythm under realistic paragraph lengths.
             </p>
-          </section>
-
-          <section className="car-template-block car-template-image-block">
-            <ResponsiveImage src={exteriorImageTwo} alt={`${car.title} exterior view 2`} ratio="16 / 9" className="car-template-inline-image" placeholderLabel="Exterior" />
           </section>
 
           <section className="car-template-block" id="engine-performance">
             <h2 className="car-template-section-title">Engine, Transmission, and Performance</h2>
+            <ResponsiveImage src={exteriorImageTwo} alt={`${car.title} exterior view 2`} ratio="16 / 9" className="car-template-inline-image" placeholderLabel="Exterior" />
             <p className="car-template-text centered">
-              Buyers can compare engine output, transmission options, and driving character here. Placeholder copy is intentionally concise and will be
-              replaced with model-specific data and road-test notes.
+              Buyers can compare engine output, transmission options, and driving character here. This section is meant to combine official specs with
+              road-test impressions, including throttle response in city traffic, highway passing confidence, and transmission behavior in stop-and-go
+              conditions. It can also host notes about power delivery by drive mode and how performance changes with load or altitude.
             </p>
           </section>
 
           <section className="car-template-block" id="zero-sixty">
             <h2 className="car-template-section-title">0-60-MPH Times</h2>
             <p className="car-template-text centered">
-              0-60 performance figures and quarter-mile benchmarks can be surfaced in this section with trim filters and testing notes.
+              0-60 performance figures and quarter-mile benchmarks can be surfaced in this section with trim filters and testing notes. Final production
+              content can include launch method, ambient temperature, test surface, and tire condition so acceleration numbers are transparent and
+              repeatable. This longer copy also helps confirm that the tab logic and scroll tracking remain stable when sections have more body text.
             </p>
           </section>
 
           <section className="car-template-block" id="fuel-economy">
             <h2 className="car-template-section-title">Fuel Economy and Real-World MPG</h2>
-            <p className="car-template-text centered">
-              This area supports official economy figures and real-world testing results, split by drivetrain and trim.
-            </p>
-          </section>
-
-          <section className="car-template-block car-template-image-block">
             <ResponsiveImage
               src={exteriorImageThree}
               alt={`${car.title} exterior view 3`}
@@ -537,25 +790,39 @@ export function CarDetailsPage() {
               className="car-template-inline-image"
               placeholderLabel="Exterior"
             />
+            <p className="car-template-text centered">
+              This area supports official economy figures and real-world testing results, split by drivetrain and trim. It can include city, highway,
+              and mixed-cycle snapshots, plus reader-friendly ownership context like monthly fuel spend assumptions for common commute distances. You can
+              also compare efficiency deltas between wheel sizes, driving modes, and traffic-heavy versus open-road routes.
+            </p>
           </section>
 
           <section className="car-template-block" id="interior">
             <h2 className="car-template-section-title">Interior, Comfort, and Cargo</h2>
-            <p className="car-template-text centered">
-              Cabin quality, passenger room, and cargo usability details are presented here in a structured review format.
-            </p>
             <ResponsiveImage src={interiorImageFour} alt={`${car.title} interior view`} ratio="16 / 9" className="car-template-inline-image" placeholderLabel="Interior" />
+            <p className="car-template-text centered">
+              Cabin quality, passenger room, and cargo usability details are presented here in a structured review format. This section can describe seat
+              support on long trips, second-row comfort for adults, small-item storage practicality, and cargo area loading ease with daily-use examples.
+              Additional paragraphs can later cover material quality, build consistency, and visibility from the driver seat in dense traffic.
+            </p>
           </section>
 
           <section className="car-template-block" id="infotainment">
             <h2 className="car-template-section-title">Infotainment and Connectivity</h2>
             <p className="car-template-text centered">
-              Screen size, platform features, smartphone integration, and audio system details can be listed and compared in this module.
+              Screen size, platform features, smartphone integration, and audio system details can be listed and compared in this module. Final content
+              can include interface responsiveness, voice command reliability, navigation clarity, and wireless phone charging behavior during extended
+              use. This placeholder is intentionally longer to help verify paragraph spacing and readability in content-dense sections.
             </p>
           </section>
 
           <section className="car-template-block" id="safety">
             <h2 className="car-template-section-title">Safety and Driver-Assistance Features</h2>
+            <p className="car-template-text centered">
+              Core active and passive safety equipment can be summarized here before detailed feature bullets by trim. This area can eventually include
+              crash-test references, feature availability by variant, and real-world usability notes for lane assist, adaptive cruise, and parking aids.
+              The expanded text helps stress-test visual balance when this section contains both prose and lists.
+            </p>
             <ul className="car-template-list">
               <li>Standard automated emergency braking with pedestrian detection</li>
               <li>Lane-departure warning with lane-keep assist</li>
@@ -565,6 +832,11 @@ export function CarDetailsPage() {
 
           <section className="car-template-block" id="warranty">
             <h2 className="car-template-section-title">Warranty and Maintenance Coverage</h2>
+            <p className="car-template-text centered">
+              Coverage details and ownership terms can be introduced here, with plan-specific points listed below. In production, this section can also
+              summarize exclusions, service network coverage, roadside support conditions, and expected routine maintenance intervals for first owners.
+              This longer text gives you better test coverage for section spacing and sticky-tab behavior.
+            </p>
             <ul className="car-template-list">
               <li>Limited warranty and powertrain coverage summary</li>
               <li>Service and maintenance terms by variant</li>
@@ -574,47 +846,102 @@ export function CarDetailsPage() {
 
           <section className="car-template-block" id="specifications">
             <h2 className="car-template-section-title">Specifications</h2>
-            <div className="car-template-specs-grid">
-              {specRows.map((spec) => (
-                <article key={spec.label} className="car-template-spec-item">
-                  <p>{spec.label}</p>
-                  <h3>{spec.value}</h3>
-                </article>
-              ))}
-            </div>
-            <div className="car-template-actions">
-              <button type="button" className="outline-button">
-                More Features and Specs
-              </button>
-            </div>
+            <article className="car-template-specsheet">
+              <div className="car-template-specsheet-model-row">
+                <p className="car-template-specsheet-model">{car.title}</p>
+                <div className="car-template-specsheet-variant" ref={specVariantMenuRef}>
+                  <button
+                    id="spec-variant-select"
+                    type="button"
+                    className="car-template-specsheet-variant-button"
+                    aria-haspopup="listbox"
+                    aria-expanded={isSpecVariantMenuOpen}
+                    aria-controls="spec-variant-listbox"
+                    onClick={() => setIsSpecVariantMenuOpen((isOpen) => !isOpen)}
+                  >
+                    <span className="car-template-specsheet-variant-value">{selectedSpecTrim.name}</span>
+                    <span className={`car-template-specsheet-variant-arrow ${isSpecVariantMenuOpen ? "is-open" : ""}`.trim()} aria-hidden="true" />
+                  </button>
+
+                  {isSpecVariantMenuOpen ? (
+                    <ul id="spec-variant-listbox" className="car-template-specsheet-variant-menu" role="listbox" aria-label="Choose Variant">
+                      {trimRows.map((trim) => {
+                        const isSelected = trim.name === selectedSpecTrim.name;
+
+                        return (
+                          <li key={trim.name}>
+                            <button
+                              type="button"
+                              className={`car-template-specsheet-variant-option ${isSelected ? "is-selected" : ""}`.trim()}
+                              role="option"
+                              aria-selected={isSelected}
+                              onClick={() => {
+                                setSelectedSpecTrimName(trim.name);
+                                setIsSpecVariantMenuOpen(false);
+                              }}
+                            >
+                              {trim.name}
+                            </button>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  ) : null}
+                </div>
+              </div>
+              <div className="car-template-specsheet-columns">
+                <div className="car-template-specsheet-column">
+                  {specSheetLeftSections.map((section) => (
+                    <section key={section.title} className="car-template-specsheet-group">
+                      <h3>{section.title}</h3>
+                      <ul className="car-template-specsheet-list">
+                        {section.lines.map((line) => (
+                          <li key={`${section.title}-${line}`}>{line}</li>
+                        ))}
+                      </ul>
+                    </section>
+                  ))}
+                </div>
+                <div className="car-template-specsheet-column">
+                  {specSheetRightSections.map((section) => (
+                    <section key={section.title} className="car-template-specsheet-group">
+                      <h3>{section.title}</h3>
+                      <ul className="car-template-specsheet-list">
+                        {section.lines.map((line) => (
+                          <li key={`${section.title}-${line}`}>{line}</li>
+                        ))}
+                      </ul>
+                    </section>
+                  ))}
+                </div>
+              </div>
+            </article>
           </section>
 
           <section className="car-template-block" id="similar-vehicles">
             <h2 className="car-template-section-title">Similar Vehicles</h2>
-            <div className="car-template-vehicle-row">
-              {similarVehicles.map((vehicle) => (
-                <article key={vehicle.id} className="car-template-vehicle-card">
-                  <ResponsiveImage src={vehicle.image} alt={vehicle.title} ratio="16 / 10" placeholderLabel={vehicle.title} />
-                  <h3>{vehicle.title}</h3>
-                  <p className="car-template-vehicle-rating">{formatRatingOutOfTen(vehicle.rating)}</p>
-                  <p>{formatPriceInLacs(vehicle.startingPriceLacs)}</p>
-                </article>
-              ))}
-            </div>
+            {similarVehicles.length ? (
+              <div className="car-template-rank-grid car-card-grid">
+                {similarVehicles.map((vehicle) => (
+                  <StoryCard key={vehicle.id} article={vehicle} mode="car" titleClamp={2} />
+                ))}
+              </div>
+            ) : (
+              <p className="car-template-text centered">No vehicles found in this category yet.</p>
+            )}
           </section>
 
           <section className="car-template-block">
             <h2 className="car-template-section-title">{`More from ${brand}`}</h2>
-            <div className="car-template-vehicle-row">
-              {moreFromBrand.map((vehicle) => (
-                <article key={vehicle.id} className="car-template-vehicle-card">
-                  <ResponsiveImage src={vehicle.image} alt={vehicle.title} ratio="16 / 10" placeholderLabel={vehicle.title} />
-                  <h3>{vehicle.title}</h3>
-                  <p className="car-template-vehicle-rating">{formatRatingOutOfTen(vehicle.rating)}</p>
-                  <p>{formatPriceInLacs(vehicle.startingPriceLacs)}</p>
-                </article>
-              ))}
-            </div>
+            {moreFromBrand.length ? (
+              <div className="car-template-rank-grid car-card-grid">
+                {moreFromBrand.map((vehicle) => (
+                  <StoryCard key={vehicle.id} article={vehicle} mode="car" titleClamp={2} />
+                ))}
+              </div>
+            ) : (
+              <p className="car-template-text centered">{`No additional ${brand} models are available yet.`}</p>
+            )}
           </section>
         </div>
       </PageContainer>
