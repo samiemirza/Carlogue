@@ -863,6 +863,14 @@ a {
   color: #ffffff;
 }
 
+.search-results-empty {
+  margin: 0;
+  text-align: center;
+  color: var(--color-text);
+  font-size: var(--type-body-sm);
+  line-height: 1.5;
+}
+
 .category-grid {
   margin: 18px auto 0;
   max-width: 920px;

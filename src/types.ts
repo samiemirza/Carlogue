@@ -7,6 +7,9 @@ export type Article = {
   id: string;
   title: string;
   category?: string;
+  brand?: string;
+  model?: string;
+  year?: number;
   publishedAt?: string;
   rating?: number;
   startingPriceLacs?: number;

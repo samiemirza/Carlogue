@@ -82,6 +82,7 @@ export default function App() {
           <Routes location={displayLocation}>
             <Route path="/" element={<HomePage />} />
             <Route path="/shop-new-cars" element={<ShopNewCarsPage />} />
+            <Route path="/brands/:brand" element={<ShopNewCarsPage />} />
             <Route path="/expert-reviews" element={<ExpertReviewsPage />} />
             <Route path="/news-stories" element={<NewsStoriesPage />} />
             <Route path="/news-stories/stories" element={<StoriesPage />} />

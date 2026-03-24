@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { ArticleGrid } from "../components/common/ArticleGrid";
 import { FeatureSplit } from "../components/common/FeatureSplit";
 import { ResponsiveImage } from "../components/common/ResponsiveImage";
@@ -5,16 +6,18 @@ import { SectionHeader } from "../components/common/SectionHeader";
 import { HeroCarousel } from "../components/home/HeroCarousel";
 import { PageContainer } from "../components/layout/PageContainer";
 import { ResearchSearchPanel } from "../components/search/ResearchSearchPanel";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import {
   carCategories,
   buyersGuideHero,
   featuredMain,
   featuredSidebar,
+  futureCars,
   homepageSlides,
   latestReviews,
   popularCars,
 } from "../data/siteData";
+import { buildBrandRoute, type CarSearchFilters, findCarForSearch } from "../utils/carSearch";
 
 const buyersGuideCards = [
   { title: "First Time Buyer", subtitle: "Start with confidence", image: "/images/firsttime.png" },
@@ -24,6 +27,26 @@ const buyersGuideCards = [
 ];
 
 export function HomePage() {
+  const navigate = useNavigate();
+  const allNewCars = useMemo(() => [...popularCars, ...futureCars], []);
+
+  function handleResearchSubmit(filters: CarSearchFilters) {
+    if (filters.model) {
+      const matchedCar = findCarForSearch(allNewCars, filters);
+      if (matchedCar) {
+        navigate(`/cars/${encodeURIComponent(matchedCar.id)}`);
+        return;
+      }
+    }
+
+    if (filters.brand) {
+      navigate(buildBrandRoute(filters.brand));
+      return;
+    }
+
+    navigate("/shop-new-cars");
+  }
+
   return (
     <div className="home-page">
       <section className="section home-hero-section">
@@ -32,7 +55,7 @@ export function HomePage() {
         </PageContainer>
       </section>
 
-      <ResearchSearchPanel categories={carCategories} />
+      <ResearchSearchPanel categories={carCategories} cars={allNewCars} onSearchSubmit={handleResearchSubmit} />
 
       <section className="section">
         <PageContainer>
